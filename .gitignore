@@ -1,0 +1,6 @@
+.idea/
+target/
+*.py
+
+temp_results
+test.scala
