@@ -4,3 +4,5 @@ target/
 
 temp_results
 test.scala
+
+data/dst/

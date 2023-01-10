@@ -26,7 +26,9 @@ class ResultsDisplay(test: sql.DataFrame) {
 
   def showPlot(name:String, predictions: sql.DataFrame): Unit = {
     val predictArr = predictions.orderBy("t").select("prediction").map(_.getDouble(0)).collect()
-    plotTS(name, valueArr, predictArr)
+//    plotTS(name, valueArr, predictArr)
+//    plotTS(name, ("true", valueArr), ("predicted", predictArr))
+    new PlotUtils(name).addPlots(valueArr, predictArr).addLegend("true", "predicted").create()
   }
 
   def showResults(name:String, model: MyModel): Unit = {
@@ -45,9 +47,17 @@ class ResultsDisplay(test: sql.DataFrame) {
 object ResultsDisplay {
 
   def plotTS(name: String, valArrays: Array[Double]*): Unit = {
-    val f = Figure(name)
-    val p = f.subplot(0)
-    for (arr <- valArrays) p += plot(arr.indices.map(_.toDouble), arr)
+//    val f = Figure(name)
+//    val p = f.subplot(0)
+//    for (arr <- valArrays) p += plot(arr.indices.map(_.toDouble), arr)
+    new PlotUtils(name).addPlots(valArrays: _*).create()
   }
+
+//  def plotTS(name: String, namedArrays: (String, Array[Double])*): Unit = {
+//    val f = Figure(name)
+//    val p = f.subplot(0)
+//    p.legend = true
+//    for ((name, arr) <- namedArrays) p += plot(arr.indices.map(_.toDouble), arr, name=name)
+//  }
 
 }
