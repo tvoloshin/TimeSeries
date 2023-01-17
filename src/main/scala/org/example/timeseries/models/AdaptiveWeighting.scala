@@ -19,12 +19,31 @@ class AdaptiveWeighting(models: RegressionModel[Vector, _ <: RegressionModel[Vec
 
   private val votingModel = new VotingModel(models.toArray)//.setWeights(0.5, 0.5)
   private val wrappedModel = new WrappedModel().setModels(votingModel +: models: _*)
-  private val evaluator = new RegressionEvaluator().setLabelCol("value").setMetricName("rmse")
+  private val evaluator = new RegressionEvaluator().setMetricName("rmse")
+
+  private var orderCol: String = "t"
+  private var valueCol: String = "value"
+
+  def setOrderCol(colName: String): this.type = {
+    orderCol = colName
+    this
+  }
+
+  def getOrderCol: String = orderCol
+
+  def setValueCol(colName: String): this.type = {
+    valueCol = colName
+    this
+  }
+
+  def getValueCol: String = valueCol
 
   def setPredictionInterval(interval: Int): this.type = {
     predictionInterval = interval
     this
   }
+
+  def getPredictionInterval: Int = predictionInterval
 
   def setInitVector(data: sql.DataFrame, size: Int): this.type = {
     wrappedModel.setInitVector(data, size)
@@ -32,25 +51,39 @@ class AdaptiveWeighting(models: RegressionModel[Vector, _ <: RegressionModel[Vec
     this
   }
 
+  def setInitVector(vector: Vector): this.type = {
+    initVector = vector
+    this
+  }
+
+  def getInitVector: Vector = initVector
+
   def setInitWeights(weights: Seq[Double]): this.type = {
     initWeights = Some(weights)
     this
   }
 
+  def getInitWeights: Seq[Double] = initWeights.get
+
   override def predict(test: sql.DataFrame): sql.DataFrame = {
     votingModel.setWeights(initWeights.getOrElse(Seq.fill(models.size) {1.0 / models.size}): _*)
-    wrappedModel.setInitVector(initVector).setModels(votingModel +: models: _*)
+    wrappedModel
+      .setInitVector(initVector)
+      .setModels(votingModel +: models: _*)
+      .setOrderCol(orderCol)
+      .setValueCol(valueCol)
+    evaluator.setLabelCol(valueCol)
 
     val modelNames = for (i <- 1 until wrappedModel.getNames.length) yield wrappedModel.getNames(i)
 
     val num_intervals = test.count() / predictionInterval
-    var withPredictions = test.select(Array($"t", $"value") ++ ("prediction" +: modelNames).map(lit(null).cast("double").as(_)): _*)
+    var withPredictions = test.select(test.col("*") +: ("prediction" +: modelNames).map(lit(null).cast("double").as(_)): _*)
 
     for (i <- 0 to num_intervals.toInt) {
-      val newTest = test.except(test.orderBy("t").limit(i * predictionInterval))
+      val newTest = test.except(test.orderBy(orderCol).limit(i * predictionInterval))
       withPredictions = withPredictions.limit(i * predictionInterval).union(wrappedModel.predictInterval(newTest, predictionInterval))
 
-      wrappedModel.updateVector(newTest.orderBy("t").limit(predictionInterval))
+      wrappedModel.updateVector(newTest.orderBy(orderCol).limit(predictionInterval))
 
       val errors = modelNames.map(evaluator.setPredictionCol(_).evaluate(withPredictions.limit((i + 1) * predictionInterval)))
       val weights = countWeights(errors)

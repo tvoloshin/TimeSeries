@@ -6,6 +6,7 @@ import org.apache.spark.ml.regression.RegressionModel
 import org.apache.spark.mllib.linalg.Vectors
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.spark.util.MLLibUtil
+import org.nd4j.linalg.factory.Nd4j
 
 class Dl4jModel(network: MultiLayerNetwork) extends RegressionModel[Vector, Dl4jModel] {
 
@@ -15,5 +16,4 @@ class Dl4jModel(network: MultiLayerNetwork) extends RegressionModel[Vector, Dl4j
 
   override def predict(features: Vector): Double =
     network.output(MLLibUtil.toVector(Vectors.fromML(features))).getDouble(0L)
-
 }
