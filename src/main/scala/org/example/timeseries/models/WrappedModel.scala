@@ -41,7 +41,6 @@ class WrappedModel extends MyModel with Serializable {
   }
 
   def setInitVector(data:sql.DataFrame, size: Int): this.type = {
-//    testVectorInit = Vectors.dense(data.orderBy($"t".desc).select("value").limit(size).map(_.getDouble(0)).collect().reverse)
     testVectorInit = Vectors.dense(data.orderBy(desc(orderCol)).select(valueCol).limit(size).map(_.getDouble(0)).collect().reverse)
     this
   }
@@ -86,11 +85,9 @@ class WrappedModel extends MyModel with Serializable {
   override def predict(data: sql.DataFrame): sql.DataFrame = predict(data, "")
 
   def predict(data: sql.DataFrame, trueCol: String): sql.DataFrame = {
-//    val orderColType = data.schema(orderCol)
     val withID = data.orderBy(orderCol).withColumn("temp_id", monotonically_increasing_id())
 
     testVector = testVectorInit
-//    val t = data.select(orderCol).orderBy(orderCol).map(_.getInt(0)).collect()
     val ids = withID.select("temp_id").orderBy("temp_id").map(_.getLong(0)).collect()
 
     val predictionsDF = {

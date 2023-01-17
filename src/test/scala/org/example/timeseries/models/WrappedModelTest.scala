@@ -33,7 +33,7 @@ class WrappedModelTest {
 
   @Test
   def testPredict(): Unit = {
-    val df = simpleData.toDF("t")
+    val df = simpleData.map(_.toInt).toDF("t")
 
     val vectorSize = 4
     val initVector = Vectors.dense(Array.range(1, vectorSize + 1).map(_.toDouble))
@@ -48,7 +48,7 @@ class WrappedModelTest {
       .setInitVector(initVector)
     val actualDF = wrappedModel.predict(df)
 
-    assertArrayEquals(expectedRes, actualDF.collect().map(_.getAs[Double]("predictions")))
+    assertArrayEquals(expectedRes, actualDF.collect().map(_.getAs[Double]("predictions")), 1e-5)
   }
 
 }

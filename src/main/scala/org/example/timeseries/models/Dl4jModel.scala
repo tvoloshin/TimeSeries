@@ -16,5 +16,4 @@ class Dl4jModel(network: MultiLayerNetwork) extends RegressionModel[Vector, Dl4j
 
   override def predict(features: Vector): Double =
     network.output(MLLibUtil.toVector(Vectors.fromML(features))).getDouble(0L)
-//    network.output(Nd4j.create(features.toArray, 1,1,features.size)).getDouble(0L)
 }
